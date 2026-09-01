@@ -5,7 +5,6 @@ import {
   Bell,
   BriefcaseBusiness,
   CalendarDays,
-  Cat,
   Check,
   ChevronRight,
   CirclePause,
@@ -54,25 +53,12 @@ import { dailyReviewDisplay, downloadDailyReviewCard, exportDailyReviews, summar
 import { TaskBreakdownModal } from "./TaskBreakdownModal";
 import { syncTaskGroups, taskIsReady } from "./taskBreakdown";
 import { ACCEPTANCE_FIELD_LABELS, buildQuickAcceptanceTemplate, formatAcceptanceDefinition, isAcceptanceComplete, parseAcceptanceDefinition } from "./acceptance";
-import { petProgress, petRewardForTask } from "./pet";
 import { projectHasActiveTimer, removeProject, saveProject } from "./project";
 import { removeTask, taskHasActiveTimer } from "./task";
 import type { AppState, AxisId, DailyCheckin, DailyReview, FocusSession, Priority, Project, ProjectStatus, Task } from "./types";
-import bubuMascot from "./assets/bubu-mascot.svg";
-import bubuWalk from "./assets/bubu-walk.svg";
-import bubuYawn from "./assets/bubu-yawn.svg";
-import bubuStretch from "./assets/bubu-stretch.svg";
 
-type View = "today" | "companion" | "projects" | "review" | "insights";
+type View = "today" | "projects" | "review" | "insights";
 type NewProjectDraft = { axisId: AxisId; name: string; milestone: string; targetDate?: string };
-type BubuAction = "walk" | "yawn" | "stretch";
-
-const BUBU_SOUVENIRS: Record<AxisId, { icon: string; name: string; note: string }> = {
-  career: { icon: "✦", name: "程式星星", note: "技能、作品與求職足跡" },
-  research: { icon: "◈", name: "靈感樣本", note: "研究問題與論文證據" },
-  teaching: { icon: "◆", name: "教學貼紙", note: "教案、範例與知識分享" },
-  investing: { icon: "●", name: "紅色研究幣", note: "公司研究與投資復盤" },
-};
 
 const FOCUS_SECONDS = 25 * 60;
 const BREAK_SECONDS = 5 * 60;
@@ -693,7 +679,6 @@ function App() {
 
   const navItems: { id: View; label: string; icon: typeof Home }[] = [
     { id: "today", label: "今日", icon: Home },
-    { id: "companion", label: "毛球夥伴", icon: Cat },
     { id: "projects", label: "專案", icon: FolderKanban },
     { id: "review", label: "復盤", icon: FileText },
     { id: "insights", label: "洞察", icon: BarChart3 },
@@ -716,7 +701,7 @@ function App() {
 
       <main className="main-content">
         <header className="topbar">
-          <div><p className="eyebrow">{new Intl.DateTimeFormat("zh-TW", { month: "long", day: "numeric", weekday: "long" }).format(new Date())}</p><h1>{view === "today" ? "今天，選一小步就好" : view === "companion" ? "毛球夥伴" : view === "projects" ? "專案全景" : view === "review" ? "復盤中心" : "工作洞察"}</h1></div>
+          <div><p className="eyebrow">{new Intl.DateTimeFormat("zh-TW", { month: "long", day: "numeric", weekday: "long" }).format(new Date())}</p><h1>{view === "today" ? "今天，選一小步就好" : view === "projects" ? "專案全景" : view === "review" ? "復盤中心" : "工作洞察"}</h1></div>
           <div className="top-actions">
             <button className="icon-button" aria-label="通知"><Bell size={19} /></button>
             <button className="primary-button" onClick={() => setShowQuickAdd(true)}><Plus size={18} />快速新增</button>
@@ -744,7 +729,6 @@ function App() {
             onReview={() => setShowReview(true)}
           />
         )}
-        {view === "companion" && <PetCompanionView state={state} />}
         {view === "projects" && <ProjectsView state={state} onStart={startTask} onEdit={setEditingTask} onEditProject={setEditingProject} />}
         {view === "review" && <ReviewCenter state={state} onReview={() => setShowReview(true)} onOpenCard={setReviewCard} onWeekly={() => setShowWeekly(true)} onMonthly={() => setShowMonthly(true)} />}
         {view === "insights" && <InsightsView state={state} />}
@@ -788,71 +772,6 @@ function App() {
   );
 }
 
-function TodayBubuWalk({ state, todayCompleted }: { state: AppState; todayCompleted: Task[] }) {
-  const [action, setAction] = useState<BubuAction>("walk");
-  const actionTimer = useRef<number | null>(null);
-  const previousCompleted = useRef(todayCompleted.length);
-  const latestTask = [...todayCompleted].sort((left, right) => (right.completedAt ?? "").localeCompare(left.completedAt ?? ""))[0];
-  const latestAxis = latestTask ? AXES.find((axis) => axis.id === latestTask.axisId) : undefined;
-  const adventureStep = Math.min(3, todayCompleted.length);
-  const adventure = [
-    { title: "等你一起出發", message: "完成一個小任務，咘咘就會找到今天的第一條線索。" },
-    { title: "聞到第一條線索", message: "第一步已經留下來了，再推進一次看看會遇到什麼。" },
-    { title: "帶回兩件寶物", message: "今天的節奏正在形成，再完成一項就能蓋好基地。" },
-    { title: "今日紙箱基地完成", message: "三項成果已經很夠了；接下來都是自由探索，不必硬撐。" },
-  ][adventureStep];
-  const actionImage = action === "yawn" ? bubuYawn : action === "stretch" ? bubuStretch : bubuWalk;
-  const actionMessage = action === "yawn" ? "哈啊～休息一下也算前進。" : action === "stretch" ? "伸展完成，下一步會更輕鬆。" : latestTask && latestAxis ? `剛找到「${BUBU_SOUVENIRS[latestTask.axisId].name}」！` : "我先四處看看，你只要選一小步。";
-  const collection = AXES.map((axis) => ({
-    axis,
-    count: state.tasks.filter((task) => task.taskKind !== "group" && task.status === "completed" && task.axisId === axis.id).length,
-    souvenir: BUBU_SOUVENIRS[axis.id],
-  }));
-
-  function playAction(nextAction: Exclude<BubuAction, "walk">) {
-    if (actionTimer.current !== null) window.clearTimeout(actionTimer.current);
-    setAction(nextAction);
-    actionTimer.current = window.setTimeout(() => {
-      setAction("walk");
-      actionTimer.current = null;
-    }, nextAction === "yawn" ? 3600 : 3200);
-  }
-
-  useEffect(() => {
-    if (todayCompleted.length > previousCompleted.current) {
-      const nextAction = todayCompleted.length % 2 === 0 ? "yawn" : "stretch";
-      if (actionTimer.current !== null) window.clearTimeout(actionTimer.current);
-      setAction(nextAction);
-      actionTimer.current = window.setTimeout(() => {
-        setAction("walk");
-        actionTimer.current = null;
-      }, nextAction === "yawn" ? 3600 : 3200);
-    }
-    previousCompleted.current = todayCompleted.length;
-  }, [todayCompleted.length]);
-
-  useEffect(() => () => {
-    if (actionTimer.current !== null) window.clearTimeout(actionTimer.current);
-  }, []);
-
-  return <section className="today-bubu-card">
-    <div className="today-bubu-route">
-      <span className="today-bubu-speech" aria-live="polite">{actionMessage}</span>
-      <span className="today-bubu-footprints" aria-hidden="true">·　·　·　·　·</span>
-      <div className={`today-bubu-walker action-${action}`}>
-        <img src={actionImage} alt={action === "yawn" ? "咘咘正在打哈欠" : action === "stretch" ? "咘咘正在伸懶腰" : "咘咘正在今日畫面散步"} />
-      </div>
-    </div>
-    <div className="today-bubu-adventure">
-      <div className="today-bubu-heading"><div><p className="eyebrow">咘咘今日冒險</p><h3>{adventure.title}</h3></div><span>{adventureStep}/3</span></div>
-      <p>{adventure.message}</p>
-      <div className="today-adventure-track"><span style={{ width: `${adventureStep / 3 * 100}%` }} />{[1, 2, 3].map((step) => <i className={adventureStep >= step ? "done" : ""} key={step}>{adventureStep >= step ? <Check size={11} /> : step}</i>)}</div>
-      <div className="today-bubu-actions"><button type="button" onClick={() => playAction("yawn")}>🥱 打哈欠</button><button type="button" onClick={() => playAction("stretch")}>🐾 伸懶腰</button></div>
-    </div>
-    <div className="today-bubu-collection">{collection.map(({ axis, count, souvenir }) => <div key={axis.id} style={{ "--axis": axis.color, "--axis-soft": axis.softColor } as React.CSSProperties}><span>{souvenir.icon}</span><p><strong>{souvenir.name}</strong><small>{axis.shortName}</small></p><b>{count}</b></div>)}</div>
-  </section>;
-}
-
 function TodayView({ state, activeTask, elapsedSeconds, recommendations, candidateOffsets, setCandidateOffsets, onStart, onEdit, onPause, onResume, onComplete, onSkipBreak, todayCompleted, todayFocus, now, onCheckin, onReview }: {
   state: AppState; activeTask: Task | null; elapsedSeconds: number; recommendations: Record<AxisId, Task | undefined>;
   candidateOffsets: Record<AxisId, number>; setCandidateOffsets: React.Dispatch<React.SetStateAction<Record<AxisId, number>>>;
@@ -872,7 +791,6 @@ function TodayView({ state, activeTask, elapsedSeconds, recommendations, candida
 
   return (
     <div className="today-layout">
-      <TodayBubuWalk state={state} todayCompleted={todayCompleted} />
       <section className="workspace-panel">
         {isFocus && activeTask ? (
           <div className="focus-stage">
@@ -1426,69 +1344,6 @@ function InsightsView({ state }: { state: AppState }) {
     <section className="empty-insight"><BarChart3 /><h3>更多洞察會隨使用累積</h3><p>完成幾天任務後，這裡會出現精力、時段、超時與中斷趨勢。</p></section></div>;
 }
 
-function BubuHomePortrait() {
-  return <div className="pet-avatar-wrap">
-    <div className="pet-avatar-stage">
-      <img className="pet-avatar" src={bubuMascot} alt="步步的布偶貓夥伴咘咘" />
-    </div>
-    <span className="pet-mood-bubble">把成果帶回家吧。</span>
-  </div>;
-}
-
-function PetCompanionView({ state }: { state: AppState }) {
-  const actual = petProgress(state.tasks);
-  const today = workdayDate();
-  const todayEntries = actual.entries.filter(({ task }) => task.completedAt && workdayDate(new Date(task.completedAt)) === today);
-  const adventureStep = Math.min(3, todayEntries.length);
-  const collection = AXES.map((axis) => ({
-    axis,
-    souvenir: BUBU_SOUVENIRS[axis.id],
-    count: actual.entries.filter(({ task }) => task.axisId === axis.id).length,
-  }));
-
-  return <div className="pet-page">
-    <section className="pet-hero">
-      <BubuHomePortrait />
-      <div className="pet-hero-copy">
-        <div className="pet-kicker"><Sparkles size={16} />咘咘冒險手帳</div>
-        <h2>成果不再只是數字</h2>
-        <p>每完成一項任務，咘咘會帶回對應主軸的紀念物；今天只要三小步，就能完成一段完整冒險。</p>
-        <div className="pet-score-grid pet-hero-scores"><div><strong>{actual.completedCount}</strong><span>帶回成果</span></div><div><strong>{actual.qualityCount}</strong><span>高品質寶物</span></div><div><strong>{actual.points}</strong><span>品質經驗值</span></div></div>
-        <div className={`pet-care-status ${todayEntries.length ? "done" : ""}`}><Heart size={17} />{todayEntries.length ? `今天已探索 ${todayEntries.length} 次，基地進度 ${adventureStep}/3。` : "完成第一件小任務，咘咘就會開始今天的散步。"}</div>
-      </div>
-    </section>
-
-    <div className="pet-dashboard-grid">
-      <section className="pet-panel">
-        <div className="pet-panel-heading"><div><p className="eyebrow">四主軸收藏櫃</p><h3>你做過的事，會留下不同寶物</h3></div><span>由已完成任務自動整理</span></div>
-        <div className="pet-collection-grid">{collection.map(({ axis, souvenir, count }) => <article key={axis.id} style={{ "--axis": axis.color, "--axis-soft": axis.softColor } as React.CSSProperties}><span>{souvenir.icon}</span><div><strong>{souvenir.name}</strong><small>{souvenir.note}</small></div><b>{count}</b></article>)}</div>
-      </section>
-
-      <section className="pet-panel">
-        <div className="pet-panel-heading"><div><p className="eyebrow">今日冒險</p><h3>{adventureStep === 3 ? "紙箱基地完成" : `再 ${3 - adventureStep} 小步完成基地`}</h3></div><span>{todayEntries.length} 項完成</span></div>
-        <div className="pet-story-steps">{[
-          ["1", "找到線索", "完成第一件最小任務"],
-          ["2", "帶回寶物", "累積第二件具體成果"],
-          ["3", "蓋好基地", "三件已足夠形成成就感"],
-        ].map(([number, title, note], index) => <article className={adventureStep > index ? "done" : ""} key={number}><span>{adventureStep > index ? <Check size={15} /> : number}</span><div><strong>{title}</strong><small>{note}</small></div></article>)}</div>
-        <p className="pet-rule-note">三項是「完成冒險」而不是每日最低標；做更多會繼續收集紀念物，但不製造壓力。</p>
-      </section>
-    </div>
-
-    <section className="pet-panel">
-      <div className="pet-panel-heading"><div><p className="eyebrow">最近帶回來的寶物</p><h3>每件收藏都能回到原始任務</h3></div><span>由本機紀錄自動計算</span></div>
-      <div className="pet-reward-list">{actual.entries.slice(0, 6).map(({ task, reward }) => {
-        const axis = AXES.find((item) => item.id === task.axisId)!;
-        return <article key={task.id} style={{ "--axis": axis.color } as React.CSSProperties}>
-          <span className="pet-reward-dot" />
-          <div><strong>{task.title}</strong><small>{BUBU_SOUVENIRS[task.axisId].name} · 品質經驗 +{reward.points}{task.completedAt ? ` · ${workdayDate(new Date(task.completedAt))}` : ""}</small></div>
-          <b>+1</b>
-        </article>;
-      })}{!actual.entries.length && <div className="pet-empty"><Cat size={30} /><p>還沒有收藏。完成第一個小任務後，咘咘就會帶回第一件寶物。</p></div>}</div>
-    </section>
-  </div>;
-}
-
 function Modal({ children, onClose, wide = false }: { children: React.ReactNode; onClose: () => void; wide?: boolean }) {
   return <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><div className={`modal ${wide ? "wide" : ""}`}><button className="modal-close" onClick={onClose}><X size={18} /></button>{children}</div></div>;
 }
@@ -1540,7 +1395,7 @@ function ProjectEditModal({ state, project, onSave, onDelete, onClose }: {
 
     <section className="project-danger-zone">
       <div><Trash2 size={18} /><div><strong>刪除專案</strong><p>從日常系統移除專案與其中 {relatedTasks.length} 個任務；既有專注 session 與復盤統計仍會保留。</p></div></div>
-      {!confirmDelete ? <button className="danger-outline-button" disabled={activeTimer} onClick={() => setConfirmDelete(true)}><Trash2 size={15} />刪除專案</button> : <div className="project-delete-confirm"><div><AlertTriangle size={18} /><span>確定刪除「{project.name}」？這會讓相關任務與毛球點數一起移除。</span></div><div><button className="secondary-button" onClick={() => setConfirmDelete(false)}>先不要</button><button className="danger-button" onClick={() => onDelete(project.id)}>確認刪除</button></div></div>}
+      {!confirmDelete ? <button className="danger-outline-button" disabled={activeTimer} onClick={() => setConfirmDelete(true)}><Trash2 size={15} />刪除專案</button> : <div className="project-delete-confirm"><div><AlertTriangle size={18} /><span>確定刪除「{project.name}」？這會一併移除相關任務。</span></div><div><button className="secondary-button" onClick={() => setConfirmDelete(false)}>先不要</button><button className="danger-button" onClick={() => onDelete(project.id)}>確認刪除</button></div></div>}
       {activeTimer && <small>這個專案目前有計時中的任務，請先結束本次工作再刪除。</small>}
     </section>
   </Modal>;
@@ -1637,7 +1492,7 @@ function TaskEditModal({ state, task, onSave, onDelete, onClose }: { state: AppS
       completedAt: willReopen ? undefined : task.taskKind !== "group" && task.status === "completed" && completionTimeChanged ? new Date(completedDateTime).toISOString() : task.completedAt,
     })}><Check size={18} />儲存修改</button>
     <section className="project-danger-zone task-danger-zone">
-      <div><Trash2 size={18} /><div><strong>刪除任務</strong><p>{task.taskKind === "group" ? `從日常系統移除父任務與其中 ${childCount} 個小任務。` : "從日常系統移除這項任務與對應的咘咘收藏。"}既有專注 session 與收工卡統計仍會保留。</p></div></div>
+      <div><Trash2 size={18} /><div><strong>刪除任務</strong><p>{task.taskKind === "group" ? `從日常系統移除父任務與其中 ${childCount} 個小任務。` : "從日常系統移除這項任務。"}既有專注 session 與收工卡統計仍會保留。</p></div></div>
       {!confirmDelete ? <button type="button" className="danger-outline-button" disabled={activeTimer} onClick={() => setConfirmDelete(true)}><Trash2 size={15} />刪除任務</button> : <div className="project-delete-confirm"><div><AlertTriangle size={18} /><span>確定刪除「{task.title}」？{task.taskKind === "group" && childCount > 0 ? `其中 ${childCount} 個小任務也會一起移除。` : ""}</span></div><div><button type="button" className="secondary-button" onClick={() => setConfirmDelete(false)}>先不要</button><button type="button" className="danger-button" onClick={() => onDelete(task.id)}>確認刪除</button></div></div>}
       {activeTimer && <small>這項任務目前正在計時，請先結束本次工作再刪除。</small>}
     </section>
@@ -1712,8 +1567,7 @@ function SearchModal({ state, query, setQuery, onEdit, onClose }: { state: AppSt
 
 function AchievementToast({ task, interruptionCount, todayCompleted, todayFocus }: { task: Task; interruptionCount: number; todayCompleted: number; todayFocus: number }) {
   const axis = AXES.find((item) => item.id === task.axisId)!;
-  const reward = petRewardForTask({ ...task, status: "completed" });
-  return <div className="achievement-toast"><div className="confetti">✦</div><div className="trophy-ring"><Trophy /></div><p>今日 MVP 候選</p><h3>{task.title}</h3><div className="toast-stats"><span><Check size={15} />今日 {todayCompleted} 項</span><span><Clock3 size={15} />{humanMinutes(todayFocus)}</span><span style={{ color: axis.color }}>{axis.shortName}</span><span className="pet-toast-points"><Cat size={14} />咘咘找到：{BUBU_SOUVENIRS[task.axisId].name}</span></div><small>{interruptionCount ? "卡住仍然完成，這一步很有份量。" : `品質經驗 +${reward.points}；咘咘會在今日散步區做出反應。`}</small></div>;
+  return <div className="achievement-toast"><div className="confetti">✦</div><div className="trophy-ring"><Trophy /></div><p>今日 MVP 候選</p><h3>{task.title}</h3><div className="toast-stats"><span><Check size={15} />今日 {todayCompleted} 項</span><span><Clock3 size={15} />{humanMinutes(todayFocus)}</span><span style={{ color: axis.color }}>{axis.shortName}</span></div><small>{interruptionCount ? "卡住仍然完成，這一步很有份量。" : "成果已經留下紀錄，可以放心繼續下一步。"}</small></div>;
 }
 
 export default App;

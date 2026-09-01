@@ -1,6 +1,6 @@
 [package]
 name = "focus-compass-template"
-version = "0.1.0"
+version = "0.1.1"
 description = "個人工作推進與復盤系統"
 authors = ["Focus Compass"]
 edition = "2021"

@@ -40,6 +40,12 @@ describe("migrateState", () => {
     const migrated = migrateState(legacyState());
     expect(migrated.timer.pausedSeconds).toBe(0);
     expect(migrated.customPauseReasons).toEqual([]);
+    expect(migrated.axisNames).toEqual({});
+  });
+
+  it("保留有效的自訂類別名稱並忽略空白內容", () => {
+    const current = { ...legacyState(), axisNames: { career: "  產品開發  ", research: "  " } } as AppState;
+    expect(migrateState(current).axisNames).toEqual({ career: "產品開發" });
   });
 
   it("保留既有任務內容，並補上可執行類型與預估時間", () => {

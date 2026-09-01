@@ -40,7 +40,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { AXES } from "./seed";
+import { AXES, configureAxisNames, DEFAULT_AXIS_NAMES } from "./seed";
 import { exportState, loadState, saveEmergencyState, saveState } from "./storage";
 import { SKIP_INCOMPLETE_REASON, actionStreak, freezeTimer, incompleteInterruptions, rankPendingTasks, redistributeTaskFocus, workdayDate } from "./domain";
 import { weekRangeFor } from "./weekly";
@@ -201,6 +201,7 @@ function App() {
       } else if (loaded.timer.status === "paused") {
         hydrated = { ...loaded, timer: { ...loaded.timer, pauseStartedAt: Date.now() } };
       }
+      configureAxisNames(hydrated.axisNames);
       setState(hydrated);
       stateRef.current = hydrated;
       const today = workdayDate();
@@ -318,7 +319,12 @@ function App() {
   }, [state, candidateOffsets, today]);
 
   const updateState = useCallback((updater: (previous: AppState) => AppState) => {
-    setState((previous) => previous ? updater(previous) : previous);
+    setState((previous) => {
+      if (!previous) return previous;
+      const next = updater(previous);
+      configureAxisNames(next.axisNames);
+      return next;
+    });
   }, []);
 
   function startTask(task: Task) {
@@ -516,6 +522,7 @@ function App() {
         backupFolder: current.backupFolder,
         backups: [...restored.backups, safety.record],
       };
+      configureAxisNames(next.axisNames);
       await commitRestoredState(next);
       stateRef.current = next;
       setState(next);
@@ -756,6 +763,7 @@ function App() {
       {showSettings && <SettingsModal
         state={state}
         notice={backupNotice}
+        onAxisNamesChange={(axisNames) => updateState((previous) => ({ ...previous, axisNames }))}
         onBackup={performBackup}
         onRestore={chooseRestore}
         onFolderChange={(folder) => updateState((previous) => ({ ...previous, backupFolder: folder ?? undefined }))}
@@ -1253,15 +1261,23 @@ function WeeklyPromptModal({ onStart, onBackup, onLater, notice }: {
   </div></div>;
 }
 
-function SettingsModal({ state, notice, onBackup, onRestore, onFolderChange, onClose }: {
+function SettingsModal({ state, notice, onAxisNamesChange, onBackup, onRestore, onFolderChange, onClose }: {
   state: AppState;
   notice: { ok: boolean; text: string } | null;
+  onAxisNamesChange: (axisNames: Partial<Record<AxisId, string>>) => void;
   onBackup: () => void;
   onRestore: () => void;
   onFolderChange: (folder: string | null) => void;
   onClose: () => void;
 }) {
   const [resolvedDefault, setResolvedDefault] = useState<string | null>(null);
+  const [axisDraft, setAxisDraft] = useState<Record<AxisId, string>>(() => ({
+    career: state.axisNames?.career ?? DEFAULT_AXIS_NAMES.career,
+    research: state.axisNames?.research ?? DEFAULT_AXIS_NAMES.research,
+    teaching: state.axisNames?.teaching ?? DEFAULT_AXIS_NAMES.teaching,
+    investing: state.axisNames?.investing ?? DEFAULT_AXIS_NAMES.investing,
+  }));
+  const [axisSaved, setAxisSaved] = useState(false);
   useEffect(() => { void defaultBackupFolder().then(setResolvedDefault); }, []);
   const recent = [...state.backups].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
   const folderLabel = state.backupFolder ?? resolvedDefault ?? "文件\\步步\\backups";
@@ -1271,9 +1287,45 @@ function SettingsModal({ state, notice, onBackup, onRestore, onFolderChange, onC
     if (chosen) onFolderChange(chosen);
   }
 
+  function saveAxisNames() {
+    const normalized = Object.fromEntries(AXES.map((axis) => [axis.id, axisDraft[axis.id].trim()])) as Record<AxisId, string>;
+    const overrides = Object.fromEntries(AXES
+      .filter((axis) => normalized[axis.id] !== DEFAULT_AXIS_NAMES[axis.id])
+      .map((axis) => [axis.id, normalized[axis.id]])) as Partial<Record<AxisId, string>>;
+    onAxisNamesChange(overrides);
+    setAxisDraft(normalized);
+    setAxisSaved(true);
+  }
+
+  function resetAxisNames() {
+    const defaults = { ...DEFAULT_AXIS_NAMES };
+    setAxisDraft(defaults);
+    onAxisNamesChange({});
+    setAxisSaved(true);
+  }
+
+  const axisNamesValid = AXES.every((axis) => axisDraft[axis.id].trim().length > 0 && axisDraft[axis.id].trim().length <= 40);
+
   return <Modal onClose={onClose} wide>
     <div className="modal-icon blue"><Settings /></div>
     <p className="eyebrow">設定</p>
+    <h2>專案類別名稱</h2>
+    <p className="modal-lead">名稱會同步套用到任務、專案、甘特圖、復盤、統計與匯出資料；既有紀錄不會被移動。</p>
+    <div className="axis-name-settings">
+      {AXES.map((axis, index) => <label key={axis.id} style={{ "--axis": axis.color } as React.CSSProperties}>
+        <span><i />類別 {index + 1}</span>
+        <input
+          maxLength={40}
+          value={axisDraft[axis.id]}
+          onChange={(event) => { setAxisDraft((previous) => ({ ...previous, [axis.id]: event.target.value })); setAxisSaved(false); }}
+          aria-label={`類別 ${index + 1} 名稱`}
+        />
+      </label>)}
+    </div>
+    {!axisNamesValid && <p className="field-error">每個類別都需要名稱，最多 40 個字。</p>}
+    {axisSaved && <p className="download-status success">類別名稱已儲存。</p>}
+    <div className="axis-name-actions"><button className="text-button" onClick={resetAxisNames}>恢復預設名稱</button><button className="primary-button" disabled={!axisNamesValid} onClick={saveAxisNames}><Check size={17} />儲存類別名稱</button></div>
+    <div className="settings-divider" />
     <h2>備份</h2>
     <label className="field-label">備份資料夾</label>
     <div className="folder-row">

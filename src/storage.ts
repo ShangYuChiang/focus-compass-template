@@ -2,7 +2,8 @@ import type { AppState } from "./types";
 import { createInitialState } from "./seed";
 
 const FALLBACK_KEY = "focus-compass-state-v1";
-export const STATE_VERSION = 5;
+export const STATE_VERSION = 6;
+const AXIS_IDS = ["career", "research", "teaching", "investing"];
 let database: import("@tauri-apps/plugin-sql").default | null = null;
 
 function isTauri() {
@@ -15,9 +16,13 @@ function isTauri() {
  * 既有的 tasks／sessions／reviews／checkins 一筆都不改。
  */
 export function migrateState(state: AppState): AppState {
+  const axisNames = Object.fromEntries(Object.entries(state.axisNames ?? {}).filter(([id, name]) => (
+    AXIS_IDS.includes(id) && typeof name === "string" && name.trim().length > 0 && name.trim().length <= 40
+  )).map(([id, name]) => [id, name!.trim()]));
   return {
     ...state,
     version: STATE_VERSION,
+    axisNames,
     weeklyReviews: state.weeklyReviews ?? [],
     monthlyReviews: state.monthlyReviews ?? [],
     backups: state.backups ?? [],

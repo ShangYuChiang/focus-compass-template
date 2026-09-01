@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./seed";
 import { parseBackupPayload, prepareRestoredState } from "./restore";
+import { STATE_VERSION } from "./storage";
 import type { Task } from "./types";
 
 function sampleTask(overrides: Partial<Task> = {}): Task {
@@ -36,7 +37,7 @@ describe("parseBackupPayload", () => {
     delete state.monthlyReviews;
     delete state.backups;
     const result = parseBackupPayload(JSON.stringify(state));
-    expect(result.state.version).toBe(5);
+    expect(result.state.version).toBe(STATE_VERSION);
     expect(result.state.weeklyReviews).toEqual([]);
     expect(result.state.monthlyReviews).toEqual([]);
     expect(result.state.backups).toEqual([]);

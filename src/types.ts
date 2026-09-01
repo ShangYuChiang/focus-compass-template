@@ -147,6 +147,8 @@ export interface TimerState {
 
 export interface AppState {
   version: number;
+  /** 四個固定主軸 ID 的自訂顯示名稱；空白或缺少時使用預設名稱。 */
+  axisNames?: Partial<Record<AxisId, string>>;
   projects: Project[];
   tasks: Task[];
   sessions: FocusSession[];

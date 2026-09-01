@@ -1,6 +1,6 @@
-import type { AppState, Axis } from "./types";
+import type { AppState, Axis, AxisId } from "./types";
 
-export const AXES: Axis[] = [
+const DEFAULT_AXES: Axis[] = [
   {
     id: "career",
     name: "AI 能力、作品與職涯",
@@ -35,10 +35,31 @@ export const AXES: Axis[] = [
   },
 ];
 
+export const AXES: Axis[] = DEFAULT_AXES.map((axis) => ({ ...axis }));
+
+export const DEFAULT_AXIS_NAMES = Object.fromEntries(
+  DEFAULT_AXES.map((axis) => [axis.id, axis.name]),
+) as Record<AxisId, string>;
+
+/**
+ * 套用儲存在 AppState 的顯示名稱。主軸 ID、色彩與資料關聯保持不變。
+ * AXES 是跨畫面共用的目錄，因此設定後所有任務、復盤與統計會使用同一名稱。
+ */
+export function configureAxisNames(overrides: Partial<Record<AxisId, string>> = {}) {
+  AXES.forEach((axis, index) => {
+    const defaults = DEFAULT_AXES[index];
+    const customName = overrides[axis.id]?.trim();
+    axis.name = customName || defaults.name;
+    axis.shortName = customName || defaults.shortName;
+  });
+  return AXES;
+}
+
 export function createInitialState(): AppState {
   const now = new Date().toISOString();
   return {
-    version: 5,
+    version: 6,
+    axisNames: {},
     // 公開模板不預載任何個人專案或任務；第一次新增任務時即可建立自己的專案。
     projects: [],
     tasks: [],

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 220" role="img">
+  <title>正在散步的通用布偶貓插畫</title>
+  <defs><linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffaf0"/><stop offset="1" stop-color="#e7dccf"/></linearGradient></defs>
+  <path d="M55 111C17 84 26 50 49 58c17 6 6 24 19 31" fill="none" stroke="#75625b" stroke-width="14" stroke-linecap="round"/>
+  <ellipse cx="121" cy="126" rx="76" ry="48" fill="url(#fur)" stroke="#5f514d" stroke-width="4" transform="rotate(3 121 126)"/>
+  <path d="M91 153 79 192m48-38-3 41m31-43 15 38m20-47 19 32" stroke="#eee4d8" stroke-width="25" stroke-linecap="round"/>
+  <path d="M70 194h24m42 2h-24m49-4h21m17-15h21" stroke="#5f514d" stroke-width="4" stroke-linecap="round"/>
+  <path d="m165 84 4-40 25 29m30 24 15-37-36 18" fill="#75625b" stroke="#5f514d" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="196" cy="102" r="44" fill="url(#fur)" stroke="#5f514d" stroke-width="4"/>
+  <path d="M166 91c11-25 23-26 31-12 9-14 20-12 30 12-6 27-15 35-30 35s-25-8-31-35Z" fill="#75625b"/>
+  <ellipse cx="185" cy="101" rx="7" ry="5" fill="#bfe8ff"/><ellipse cx="210" cy="101" rx="7" ry="5" fill="#bfe8ff"/><circle cx="186" cy="101" r="2.5" fill="#315a79"/><circle cx="209" cy="101" r="2.5" fill="#315a79"/>
+  <path d="m197 112-6 4 6 4 6-4Z" fill="#e8a5a0"/><path d="M197 120c-5 6-10 6-14 2m14-2c5 6 10 6 14 2" fill="none" stroke="#4e4140" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M50 206h178" stroke="#d8cdc2" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 12"/>
+</svg>

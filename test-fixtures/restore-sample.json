@@ -1,0 +1,48 @@
+{
+  "version": 2,
+  "projects": [
+    {
+      "id": "fixture-project",
+      "axisId": "career",
+      "name": "還原測試專案",
+      "milestone": "確認安全還原流程",
+      "status": "active"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "fixture-task",
+      "axisId": "career",
+      "projectId": "fixture-project",
+      "title": "還原測試任務",
+      "definition": "預覽正確顯示一個任務",
+      "priority": "medium",
+      "status": "pending",
+      "tags": ["測試"],
+      "createdAt": "2026-08-18T00:00:00.000Z",
+      "actualSeconds": 0,
+      "sessions": 0
+    }
+  ],
+  "sessions": [],
+  "checkins": [],
+  "reviews": [],
+  "weeklyReviews": [],
+  "monthlyReviews": [],
+  "backups": [],
+  "timer": {
+    "taskId": null,
+    "status": "idle",
+    "startedAt": null,
+    "accumulatedSeconds": 0,
+    "pausedSeconds": 0,
+    "pauseStartedAt": null,
+    "breakEndsAt": null,
+    "interruptions": []
+  },
+  "customPauseReasons": [],
+  "theme": "system",
+  "soundEnabled": true,
+  "createdAt": "2026-08-18T00:00:00.000Z",
+  "updatedAt": "2026-08-18T00:00:00.000Z"
+}

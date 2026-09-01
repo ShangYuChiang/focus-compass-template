@@ -1,0 +1,13 @@
+node_modules/
+dist/
+src-tauri/target/
+.claude/
+*.db
+*.db-shm
+*.db-wal
+*.log
+.env
+.env.*
+!.env.example
+# 私人版寵物照片的衍生圖不可加入公開模板；公開版使用同名 SVG 插畫。
+src/assets/bubu-*.png

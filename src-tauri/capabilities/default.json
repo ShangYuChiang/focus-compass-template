@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "步步桌面程式的本機能力",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-destroy",
+    "notification:default",
+    "dialog:default",
+    "dialog:allow-open",
+    "sql:default",
+    "sql:allow-execute",
+    "sql:allow-select"
+  ]
+}

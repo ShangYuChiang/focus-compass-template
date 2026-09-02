@@ -41,6 +41,7 @@ import {
   X,
 } from "lucide-react";
 import { AXES, configureAxisNames, DEFAULT_AXIS_NAMES } from "./seed";
+import { APP_VERSION_LABEL } from "./version";
 import { exportState, loadState, saveEmergencyState, saveState } from "./storage";
 import { SKIP_INCOMPLETE_REASON, actionStreak, freezeTimer, incompleteInterruptions, rankPendingTasks, redistributeTaskFocus, workdayDate } from "./domain";
 import { weekRangeFor } from "./weekly";
@@ -694,7 +695,7 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand"><div className="brand-mark">步</div><div><strong>步步</strong><span>每天推進一小步</span></div></div>
+        <div className="brand"><div className="brand-mark">步</div><div><strong>步步</strong><span>Template {APP_VERSION_LABEL}</span><span>每天推進一小步</span></div></div>
         <nav className="nav-list">
           {navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><item.icon size={19} /><span>{item.label}</span></button>)}
         </nav>
@@ -1308,7 +1309,7 @@ function SettingsModal({ state, notice, onAxisNamesChange, onBackup, onRestore, 
 
   return <Modal onClose={onClose} wide>
     <div className="modal-icon blue"><Settings /></div>
-    <p className="eyebrow">設定</p>
+    <p className="eyebrow">設定 · 步步 Template {APP_VERSION_LABEL}</p>
     <h2>專案類別名稱</h2>
     <p className="modal-lead">名稱會同步套用到任務、專案、甘特圖、復盤、統計與匯出資料；既有紀錄不會被移動。</p>
     <div className="axis-name-settings">
